@@ -1,0 +1,4 @@
+PyGObject>=3.40.0
+requests>=2.28.0
+cryptography>=40.0.0
+# No heavy ML deps; TF-IDF implemented in pure Python in aiden_storage

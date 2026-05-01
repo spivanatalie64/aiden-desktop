@@ -1,0 +1,6 @@
+{
+  "allowed": [
+    ["systemctl", "reboot"],
+    ["/usr/bin/echo", "hello"]
+  ]
+}

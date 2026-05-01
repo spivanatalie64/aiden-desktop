@@ -1,0 +1,5 @@
+usr/lib/aiden/* /usr/lib/aiden/
+usr/bin/aiden /usr/bin/
+usr/libexec/aiden-helper.py /usr/libexec/
+usr/share/polkit-1/actions/org.acreetionos.aiden.policy /usr/share/polkit-1/actions/
+etc/aiden/whitelist.json /etc/aiden/

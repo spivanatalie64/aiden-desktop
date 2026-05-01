@@ -1,0 +1,34 @@
+{
+  "app-id": "org.acreetionos.Aiden",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "43",
+  "sdk": "org.gnome.Sdk",
+  "command": "main.py",
+  "modules": [
+    {
+      "name": "aiden-desktop",
+      "buildsystem": "simple",
+      "build-commands": [
+        "python3 -m pip install --no-index --find-links=wheelhouse -r requirements.txt",
+        "install -D main.py /app/lib/main.py",
+        "install -D aiden_storage.py /app/lib/aiden_storage.py",
+        "install -D openrouter_client.py /app/lib/openrouter_client.py",
+        "install -D settings.py /app/lib/settings.py",
+        "install -D aiden /app/bin/aiden",
+        "install -D privileged/aiden-helper.py /app/libexec/aiden-helper.py",
+        "install -D privileged/org.acreetionos.aiden.policy /app/share/polkit-1/actions/org.acreetionos.aiden.policy"
+      ],
+      "sources": [
+        { "type": "dir", "path": "." }
+      ]
+    }
+  ]
+  ,
+  "finish-args": [
+    "--share=network",
+    "--filesystem=~/.local/share/aiden:rw",
+    "--filesystem=~/.config/aiden:rw",
+    "--talk-name=org.freedesktop.Notifications",
+    "--socket=session-bus"
+  ]
+}
