@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, ec, rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.key_exchange import x25519
+from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.backends import default_backend
 
 # SSH agent protocol constants
@@ -54,6 +54,22 @@ class NodeIdentity:
             return True
         except Exception:
             return False
+
+    @classmethod
+    def _from_public(cls, pub: ed25519.Ed25519PublicKey) -> 'NodeIdentity':
+        node = cls.__new__(cls)
+        node._private_key = None
+        node._public_key = pub
+        pub_bytes = pub.public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw
+        )
+        import hashlib
+        node.fingerprint = hashlib.sha256(pub_bytes).hexdigest()[:16]
+        node.full_fingerprint = 'SHA256:' + base64.b64encode(
+            hashlib.sha256(pub_bytes).digest()
+        ).decode('ascii').rstrip('=')
+        return node
 
     def public_key_bytes(self) -> bytes:
         return self._public_key.public_bytes(

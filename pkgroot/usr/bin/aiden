@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# Wrapper to launch AIDEN desktop
-exec python3 /usr/lib/aiden/main.py "$@"

@@ -26,7 +26,8 @@ def encode_message(msg_type: int, payload: bytes, key: bytes, seq: int) -> bytes
 
 
 def decode_message(data: bytes, key: bytes) -> Tuple[int, bytes, int]:
-    pt, seq = decrypt_message(key, data)
+    length = struct.unpack('>I', data[:4])[0]
+    pt, seq = decrypt_message(key, data[4:4+length])
     version, msg_type, orig_seq = struct.unpack('>BHI', pt[:7])
     return msg_type, pt[7:], seq
 

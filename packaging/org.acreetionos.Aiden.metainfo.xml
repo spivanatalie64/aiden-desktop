@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.acreetionos.Aiden</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>AIDEN Desktop</name>
+  <summary>AI desktop assistant with code execution, encrypted storage, and LAN mesh</summary>
+  <description>
+    <p>AIDEN is a powerful AI assistant that runs on your local machine. It provides:</p>
+    <ul>
+      <li>Conversational AI via OpenRouter proxy (or custom providers)</li>
+      <li>Sandboxed code execution (Bubblewrap + seccomp)</li>
+      <li>Encrypted local conversation storage (AES-256-GCM)</li>
+      <li>LAN mesh for distributed response caching between nodes</li>
+      <li>Privileged operation via polkit with command whitelist enforcement</li>
+      <li>SSH-key authenticated peer discovery</li>
+      <li>Image generation, web search, and systemd service management</li>
+    </ul>
+    <p>Available frontends: GTK, Tauri (Desktop webview), and Textual (Terminal UI).</p>
+  </description>
+  <categories>
+    <category>Utility</category>
+    <category>AI</category>
+    <category>Chat</category>
+  </categories>
+  <url type="homepage">https://gitlab.acreetionos.org/natalie/aiden-desktop</url>
+  <url type="vcs-browser">https://gitlab.acreetionos.org/natalie/aiden-desktop</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main chat interface</caption>
+      <image>https://example.com/aiden-screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0.0" date="2026-05-02">
+      <description>
+        <p>Initial release</p>
+        <ul>
+          <li>Chat with AI models via OpenRouter proxy</li>
+          <li>Encrypted local storage (AES-256-GCM + PBKDF2)</li>
+          <li>Code execution in Bubblewrap sandbox</li>
+          <li>LAN mesh with SSH authentication</li>
+          <li>5 system prompt presets</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

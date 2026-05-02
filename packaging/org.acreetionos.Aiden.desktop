@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=AIDEN Desktop
+GenericName=AI Assistant
+Comment=AI desktop assistant with code execution, encrypted storage, and LAN mesh
+Exec=aiden
+Icon=org.acreetionos.Aiden
+Terminal=false
+Categories=Utility;AI;Chat;Office;
+Keywords=ai;chat;assistant;openrouter;
+StartupNotify=true
+X-GNOME-UsesNotifications=true

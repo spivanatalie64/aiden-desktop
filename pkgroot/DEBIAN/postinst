@@ -1,6 +1,0 @@
-#!/bin/sh
-set -e
-# Post-install placeholder: update alternatives or create wrapper
-echo "AIDEN installed. Configure polkit rules and helper permissions as root."
-
-exit 0
