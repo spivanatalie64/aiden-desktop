@@ -1,0 +1,76 @@
+$schema: https://textual.textualize.io/schemas/theme.json
+
+# AcreetionOS Dark Theme for AIDEN TUI
+# Based on the AcreetionOS brand colors
+
+colors:
+  primary: "#2ecc71"
+  secondary: "#61afef"
+  background: "#121212"
+  surface: "#1a1a1a"
+  panel: "#222222"
+  border: "#333333"
+  text: "#e5e5e5"
+  text-muted: "#b2b2b2"
+  error: "#e74c3c"
+  warning: "#f39c12"
+  accent: "#9b59b6"
+  success: "#2ecc71"
+
+Screen:
+  background: $background
+
+Header:
+  background: $surface
+  color: $text
+
+Footer:
+  background: $surface
+  color: $text-muted
+
+Static:
+  background: transparent
+  color: $text
+
+Input:
+  background: $panel
+  border: solid $border
+  color: $text
+
+Button:
+  background: $panel
+  color: $text
+  border: solid $border
+
+Button.primary:
+  background: $primary
+  color: #000
+  border: none
+
+Button.error:
+  background: $error
+  color: #fff
+  border: none
+
+ListView:
+  background: $panel
+  border: solid $border
+
+ListItem:
+  background: $panel
+  color: $text
+  &:hover:
+    background: $surface
+
+TabbedContent:
+  background: $panel
+  border: solid $border
+
+DataTable:
+  background: $panel
+  border: solid $border
+  color: $text
+
+Tree:
+  background: $panel
+  border: solid $border

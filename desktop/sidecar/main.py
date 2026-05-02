@@ -14,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from common.audit import init_audit
 
+from routes import chat, models, processes, images, settings, mesh, conversations
+
 app = FastAPI(title='AIDEN Backend', version='1.0.0')
 
 app.add_middleware(
@@ -24,9 +26,19 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+app.include_router(chat.router)
+app.include_router(models.router)
+app.include_router(processes.router)
+app.include_router(images.router)
+app.include_router(settings.router)
+app.include_router(mesh.router)
+app.include_router(conversations.router)
+
+
 @app.on_event('startup')
 async def startup():
     init_audit()
+
 
 @app.get('/health')
 async def health():
