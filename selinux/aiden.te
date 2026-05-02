@@ -1,0 +1,45 @@
+policy_module(aiden, 1.0.0)
+
+########################################
+# Main app domain
+type aiden_t;
+domain_type(aiden_t);
+domain_entry_file(aiden_t);
+
+type aiden_var_t;
+files_type(aiden_var_t);
+
+type aiden_etc_t;
+files_type(aiden_etc_t);
+
+# Network: connect to proxy and LAN peers
+corenet_tcp_connect_all_ports(aiden_t)
+corenet_udp_bind_all_ports(aiden_t)
+corenet_udp_sendrecv_all_if(aiden_t)
+corenet_sendrecv_all_packets(aiden_t)
+
+# Filesystem: read /usr, /etc, write ~/.local/share/aiden
+allow aiden_t aiden_var_t:dir { create_dir_perms search_dir_perms };
+allow aiden_t aiden_var_t:file { create_file_perms write_file_perms read_file_perms unlink_file_perms };
+allow aiden_t aiden_etc_t:dir search_dir_perms;
+allow aiden_t aiden_etc_t:file read_file_perms;
+
+# Bubblewrap transition
+corecmd_exec_bin(aiden_t)
+allow aiden_t aiden_sandbox_t:process transition;
+allow aiden_t aiden_sandbox_t:fd use;
+allow aiden_t aiden_sandbox_t:fifo_file rw_fifo_file_perms;
+allow aiden_t aiden_sandbox_t:process sigchld;
+corecmd_binary_policy(aiden_t)
+
+# polkit: pkexec transition to helper domain
+allow aiden_t aiden_helper_t:process transition;
+allow aiden_t aiden_helper_t:fd use;
+ps_process_pattern(aiden_t, aiden_helper_t)
+
+# syslog
+logging_send_syslog_msg(aiden_t)
+
+# mDNS
+allow aiden_t self:udp_socket create_socket_perms;
+allow aiden_t self:packet_socket create_socket_perms;

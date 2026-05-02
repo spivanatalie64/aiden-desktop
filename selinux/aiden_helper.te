@@ -1,0 +1,22 @@
+policy_module(aiden_helper, 1.0.0)
+
+type aiden_helper_t;
+domain_type(aiden_helper_t);
+domain_entry_file(aiden_helper_t);
+
+# Only invoked via pkexec
+role_transition sysadm_r aiden_helper_t;
+allow sysadm_t aiden_helper_t:process transition;
+
+# Narrow execution whitelist
+allow aiden_helper_t self:capability { sys_boot sys_admin };
+
+# systemctl reboot
+allow aiden_helper_t init_t:dbus send_msg;
+
+# apt / package manager (read-only exec)
+allow aiden_helper_t self:file execute;
+allow aiden_helper_t usr_t:file { read_file_perms execute_file_perms };
+
+# write to audit
+logging_send_syslog_msg(aiden_helper_t)

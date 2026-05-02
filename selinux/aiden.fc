@@ -1,0 +1,6 @@
+/usr/lib/aiden(/.*)?           system_u:object_r:aiden_var_t:s0
+/usr/bin/aiden                 system_u:object_r:aiden_t:s0
+/usr/libexec/aiden-helper.py   system_u:object_r:aiden_helper_t:s0
+/etc/aiden(/.*)?               system_u:object_r:aiden_etc_t:s0
+/root/.local/share/aiden(/.*)? system_u:object_r:aiden_var_t:s0
+/home/[^/]+/.local/share/aiden(/.*)? system_u:object_r:aiden_var_t:s0

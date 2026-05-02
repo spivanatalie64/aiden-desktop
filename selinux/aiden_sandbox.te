@@ -1,0 +1,26 @@
+policy_module(aiden_sandbox, 1.0.0)
+
+type aiden_sandbox_t;
+domain_type(aiden_sandbox_t);
+domain_entry_file(aiden_sandbox_t);
+
+# No network
+dontaudit aiden_sandbox_t self:udp_socket { create connect };
+dontaudit aiden_sandbox_t self:tcp_socket { create connect };
+
+# Read-only /usr
+allow aiden_sandbox_t usr_t:file read_file_perms;
+allow aiden_sandbox_t usr_t:dir search_dir_perms;
+allow aiden_sandbox_t lib_t:file read_file_perms;
+allow aiden_sandbox_t lib_t:dir search_dir_perms;
+
+# Private tmpfs
+allow aiden_sandbox_t tmpfs_t:dir { create_dir_perms search_dir_perms };
+allow aiden_sandbox_t tmpfs_t:file { create_file_perms write_file_perms read_file_perms };
+
+# proc read
+allow aiden_sandbox_t proc_t:dir search_dir_perms;
+allow aiden_sandbox_t proc_t:file read_file_perms;
+
+# Seccomp
+allow aiden_sandbox_t self:process { noatsecure rlimitinh siginh };
