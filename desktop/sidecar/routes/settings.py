@@ -57,7 +57,8 @@ async def active_preset():
 
 
 @router.put("/presets/active")
-async def set_active(key: str):
+async def set_active(body: dict):
+    key = body.get("key", "default")
     set_active_preset(key)
     return {"key": key}
 
