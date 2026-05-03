@@ -42,8 +42,40 @@ EOF
     exit 0
 }
 
+# ─── System dependencies by distro ─────────────────────────────────────
+cmd_install_sysdeps() {
+    if command -v apt &>/dev/null; then
+        log "Detected apt (Debian/Ubuntu). Installing Tauri system deps..."
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq \
+            build-essential curl wget file libssl-dev libgtk-3-dev \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev \
+            2>&1 | tail -3
+    elif command -v pacman &>/dev/null; then
+        log "Detected pacman (Arch). Installing Tauri system deps..."
+        sudo pacman -S --noconfirm \
+            webkit2gtk-4.1 libappindicator-gtk3 librsvg libsoup3 \
+            base-devel 2>&1 | tail -3
+    elif command -v dnf &>/dev/null; then
+        log "Detected dnf (Fedora). Installing Tauri system deps..."
+        sudo dnf install -y \
+            gcc-c++ webkit2gtk4.1-devel libappindicator-gtk3-devel \
+            librsvg2-devel libsoup3-devel openssl-devel 2>&1 | tail -3
+    elif command -v zypper &>/dev/null; then
+        log "Detected zypper (openSUSE). Installing Tauri system deps..."
+        sudo zypper install -y \
+            gcc-c++ webkit2gtk4_1-devel libappindicator3-1 \
+            librsvg-devel libsoup3-devel openssl-devel 2>&1 | tail -3
+    else
+        warn "Unknown package manager. Install Tauri deps manually: https://v2.tauri.app/start/prerequisites/"
+    fi
+    ok "System deps installed"
+}
+
 # ─── Dependencies ──────────────────────────────────────────────────────
 cmd_setup() {
+    cmd_install_sysdeps
     log "Installing Python dependencies..."
     "$PIP" install --break-system-packages --user -r requirements.txt 2>/dev/null \
         || "$PIP" install --user -r requirements.txt 2>/dev/null \
@@ -63,6 +95,8 @@ cmd_setup() {
         log "Installing Node.js dependencies (Svelte frontend)..."
         cd desktop/web
         npm install 2>/dev/null && ok "Node deps installed" || warn "npm install skipped (run manually: cd desktop/web && npm install)"
+        log "Installing Tauri CLI..."
+        npm install -D @tauri-apps/cli 2>/dev/null && ok "Tauri CLI installed" || warn "Tauri CLI install failed"
         cd "$PROJECT_DIR"
     else
         warn "Node.js not found — skipping Svelte frontend setup"
@@ -105,10 +139,20 @@ cmd_build() {
         cd "$PROJECT_DIR"
     fi
 
-    if command -v cargo &>/dev/null && [ -f desktop/src-tauri/Cargo.toml ]; then
+    if [ -f desktop/web/node_modules/.bin/tauri ] && [ -f desktop/src-tauri/Cargo.toml ]; then
         log "Building Tauri desktop app..."
-        cd desktop/src-tauri
-        cargo build --release 2>/dev/null && ok "Tauri build complete" || warn "Tauri build failed (needs system deps: check Tauri docs)"
+        TAURI_BIN="desktop/web/node_modules/.bin/tauri"
+        if [ -x "$TAURI_BIN" ]; then
+            cd desktop && "$PROJECT_DIR/$TAURI_BIN" build --bundles deb,appimage 2>&1 || warn "Tauri build failed — see output above"
+        else
+            warn "Tauri CLI not found at $TAURI_BIN"
+        fi
+        cd "$PROJECT_DIR"
+    elif command -v cargo &>/dev/null && [ -f desktop/src-tauri/Cargo.toml ]; then
+        log "Installing Tauri CLI (via cargo) and building..."
+        cargo install tauri-cli --version "^2" 2>/dev/null
+        cd desktop
+        cargo tauri build --bundles deb,appimage 2>&1 || warn "Tauri build failed — see output above"
         cd "$PROJECT_DIR"
     fi
 

@@ -1,0 +1,153 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            bundles: deb,appimage
+          - os: fedora-40
+            bundles: rpm,appimage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/web/package-lock.json
+
+      - name: Install system deps (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential curl wget file libssl-dev libgtk-3-dev \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libjavascriptcoregtk-4.1-dev libsoup-3.0-dev
+
+      - name: Install system deps (Fedora)
+        if: startsWith(matrix.os, 'fedora')
+        run: |
+          sudo dnf install -y -q \
+            gcc-c++ file pkg-config openssl-devel gtk3-devel \
+            webkit2gtk4.1-devel librsvg2-devel libsoup3-devel \
+            libappindicator-gtk3-devel
+
+      - name: Install frontend deps & build
+        working-directory: desktop/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Tauri bundles
+        working-directory: desktop
+        run: npx --prefix ../web tauri build --bundles ${{ matrix.bundles }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiden-desktop-${{ matrix.os }}-${{ github.sha }}
+          path: desktop/src-tauri/target/release/bundle/
+          retention-days: 30
+
+  build-macos:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/web/package-lock.json
+
+      - name: Install frontend deps & build
+        working-directory: desktop/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Tauri bundles
+        working-directory: desktop
+        run: npx --prefix web tauri build --bundles dmg
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiden-desktop-macos-${{ github.sha }}
+          path: desktop/src-tauri/target/release/bundle/
+          retention-days: 30
+
+  build-windows:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/web/package-lock.json
+
+      - name: Install frontend deps & build
+        working-directory: desktop/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Tauri bundles
+        working-directory: desktop
+        run: npx --prefix web tauri build --bundles msi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiden-desktop-windows-${{ github.sha }}
+          path: desktop/src-tauri/target/release/bundle/
+          retention-days: 30
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

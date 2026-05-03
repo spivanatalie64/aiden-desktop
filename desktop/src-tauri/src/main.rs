@@ -1,14 +1,7 @@
-// AIDEN Desktop – Tauri main (Gecko backend)
-// This uses a custom Gecko-based webview runtime.
-// See src/gecko_runtime/ for the Gecko embedding implementation.
-
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod gecko_runtime;
+use tauri_plugin_shell::ShellExt;
 
-use tauri::Manager;
-
-/// Tauri command: spawn the Python backend sidecar
 #[tauri::command]
 fn start_backend(app: tauri::AppHandle) -> Result<(), String> {
     let sidecar = app.shell().sidecar("aiden-backend")
@@ -19,7 +12,6 @@ fn start_backend(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Tauri command: call the Python backend HTTP API
 #[tauri::command]
 async fn api(path: String, method: String, body: Option<String>) -> Result<String, String> {
     let client = reqwest::Client::new();
