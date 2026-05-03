@@ -21,3 +21,4 @@ node_modules/
 *.rpm
 *.AppImage
 sidecar/__pycache__/
+desktop/src-tauri/target/
