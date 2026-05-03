@@ -7,7 +7,7 @@ variables:
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
   CARGO_TARGET_DIR: $CI_PROJECT_DIR/desktop/src-tauri/target
   NODE_OPTIONS: --max-old-space-size=4096
-  PATH: $HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  PATH: $CARGO_HOME/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 .default_cache: &default_cache
   key: ${CI_JOB_IMAGE}
@@ -16,22 +16,20 @@ variables:
     - desktop/src-tauri/target/
     - desktop/web/node_modules/
 
-# ── Build: produce binary + native bundles on Ubuntu ─────────────────
+# ── Build: produce binary on Arch Linux ─────────────────────────────
 
 build:binary:
   stage: build
-  image: ubuntu:24.04
+  image: archlinux:latest
   cache:
     <<: *default_cache
   before_script:
-    - apt-get update -qq
-    - apt-get install -y -qq build-essential curl wget file pkg-config
-      libssl-dev libgtk-3-dev librsvg2-dev libwebkit2gtk-4.1-dev
-      libjavascriptcoregtk-4.1-dev libsoup-3.0-dev libayatana-appindicator3-dev
-    - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-    - apt-get install -y -qq nodejs
+    - pacman -Syu --noconfirm
+    - pacman -S --noconfirm base-devel curl wget file npm nodejs
+      webkit2gtk-4.1 libappindicator-gtk3 librsvg libsoup3
+      dpkg fakeroot 2>&1 | tail -3
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>&1 | tail -1
-    - source "$HOME/.cargo/env"
+    - source "$CARGO_HOME/env"
   script:
     - cd desktop/web && npm ci --silent && cd ../..
     - cd desktop && npx --prefix web tauri build --bundles deb,appimage && cd ..
