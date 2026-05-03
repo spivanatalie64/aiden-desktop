@@ -7,6 +7,7 @@ variables:
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
   CARGO_TARGET_DIR: $CI_PROJECT_DIR/desktop/src-tauri/target
   NODE_OPTIONS: --max-old-space-size=4096
+  PATH: $HOME/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 .default_cache: &default_cache
   key: ${CI_JOB_IMAGE}
@@ -29,7 +30,8 @@ build:binary:
       libjavascriptcoregtk-4.1-dev libsoup-3.0-dev libayatana-appindicator3-dev
     - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
     - apt-get install -y -qq nodejs
-    - rustup default stable 2>/dev/null || true
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>&1 | tail -1
+    - source "$HOME/.cargo/env"
   script:
     - cd desktop/web && npm ci --silent && cd ../..
     - cd desktop && npx --prefix web tauri build --bundles deb,appimage && cd ..
@@ -77,8 +79,8 @@ package:rpm:
   image: fedora:40
   <<: *package_base
   before_script:
-    - dnf install -y -q rpmdevtools gcc-c++ file pkg-config openssl-devel gtk3-devel webkit2gtk4.1-devel librsvg2-devel libsoup3-devel libappindicator-gtk3-devel nodejs npm rustup
-    - rustup default stable
+    - dnf install -y -q rpmdevtools gcc-c++ file pkg-config openssl-devel gtk3-devel webkit2gtk4.1-devel librsvg2-devel libsoup3-devel libappindicator-gtk3-devel nodejs npm
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>&1 | tail -1
   script:
     - mkdir -p packaging/out
     - cd desktop/web && npm ci --silent && npm run build --silent && cd ../..
