@@ -32,7 +32,7 @@ build:binary:
     - source "$CARGO_HOME/env"
   script:
     - cd desktop/web && npm ci --silent && cd ../..
-    - cd desktop && npx --prefix web tauri build --bundles deb,appimage && cd ..
+    - cd desktop && npx --prefix web tauri build --bundles deb && cd ..
   artifacts:
     name: "aiden-desktop-binary-${CI_COMMIT_SHORT_SHA}"
     paths:
@@ -68,10 +68,20 @@ package:deb:
 package:appimage:
   image: ubuntu:24.04
   <<: *package_base
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq file libfuse2
+    - curl -L -o /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+    - chmod +x /usr/local/bin/appimagetool
   script:
-    - mkdir -p packaging/out/appimage
-    - cp -r desktop/src-tauri/target/release/bundle/appimage/* packaging/out/appimage/ 2>/dev/null || true
-    - ls -lh packaging/out/appimage/
+    - mkdir -p packaging/out/appimage/AppDir/usr/bin
+    - mkdir -p packaging/out/appimage/AppDir/usr/share/applications
+    - mkdir -p packaging/out/appimage/AppDir/usr/share/icons/hicolor/128x128/apps
+    - cp desktop/src-tauri/target/release/aiden-desktop packaging/out/appimage/AppDir/usr/bin/
+    - cp packaging/org.acreetionos.Aiden.desktop packaging/out/appimage/AppDir/usr/share/applications/
+    - cp desktop/src-tauri/icons/128x128.png packaging/out/appimage/AppDir/usr/share/icons/hicolor/128x128/apps/aiden-desktop.png
+    - ln -s usr/bin/aiden-desktop packaging/out/appimage/AppDir/AppRun
+    - cd packaging/out/appimage && APPIMAGE_EXTRACT_AND_RUN=1 appimagetool AppDir AIDEN_Desktop-x86_64.AppImage
+    - ls -lh *.AppImage
 
 package:rpm:
   image: fedora:40
