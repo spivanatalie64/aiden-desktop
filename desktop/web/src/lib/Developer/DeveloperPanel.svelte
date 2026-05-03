@@ -1,9 +1,6 @@
 <script>
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount } from 'svelte';
   import { api } from '../api.js';
-
-  export let currentView = 'developer';
-  const dispatch = createEventDispatcher();
 
   let providers = [];
   let newName = '';

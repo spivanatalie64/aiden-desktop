@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { api } from '../api.js';
   import { getPresets, getActivePreset, setActivePreset } from '../api.js';
-  import { presetKeys } from '../../../../common/presets';
 
   let proxyUrl = '';
   let storageDir = '';

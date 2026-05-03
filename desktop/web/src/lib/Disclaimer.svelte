@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { acceptDisclaimer } from '../api.js';
+  import { acceptDisclaimer } from './api.js';
   const dispatch = createEventDispatcher();
 
   let showCredits = false;
@@ -33,7 +33,9 @@
 </div>
 
 {#if showCredits}
-  <div class="overlay" on:click={() => showCredits = false}>
+  <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+  <div class="overlay" on:click={() => showCredits = false} on:keydown={(e) => e.key === 'Escape' && (showCredits = false)}>
+    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
     <div class="dialog small" on:click|stopPropagation>
       <h2>Credits</h2>
       <div class="body">

@@ -1,14 +1,14 @@
 <script>
   import { onMount } from 'svelte';
-  import '../lib/theme.css';
-  import Disclaimer from '../lib/Disclaimer.svelte';
-  import ChatView from '../lib/Chat/ChatView.svelte';
-  import Sidebar from '../lib/History/Sidebar.svelte';
-  import SettingsPanel from '../lib/Settings/SettingsPanel.svelte';
-  import DeveloperPanel from '../lib/Developer/DeveloperPanel.svelte';
-  import ProcessManager from '../lib/ProcessManager/ProcessManager.svelte';
-  import MeshPanel from '../lib/Mesh/MeshPanel.svelte';
-  import { api, checkDisclaimer } from '../lib/api.js';
+  import './lib/theme.css';
+  import Disclaimer from './lib/Disclaimer.svelte';
+  import ChatView from './lib/Chat/ChatView.svelte';
+  import Sidebar from './lib/History/Sidebar.svelte';
+  import SettingsPanel from './lib/Settings/SettingsPanel.svelte';
+  import DeveloperPanel from './lib/Developer/DeveloperPanel.svelte';
+  import ProcessManager from './lib/ProcessManager/ProcessManager.svelte';
+  import MeshPanel from './lib/Mesh/MeshPanel.svelte';
+  import { api, checkDisclaimer } from './lib/api.js';
 
   let disclaimerAccepted = false;
   let currentView = 'chat';
