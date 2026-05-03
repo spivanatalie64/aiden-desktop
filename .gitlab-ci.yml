@@ -57,6 +57,22 @@ build:binary:
 
 # ── Distro package jobs ──────────────────────────────────────────────
 
+package:deb:
+  image: ubuntu:24.04
+  <<: *package_base
+  script:
+    - mkdir -p packaging/out/deb
+    - cp -r desktop/src-tauri/target/release/bundle/deb/* packaging/out/deb/
+    - ls -lh packaging/out/deb/
+
+package:appimage:
+  image: ubuntu:24.04
+  <<: *package_base
+  script:
+    - mkdir -p packaging/out/appimage
+    - cp -r desktop/src-tauri/target/release/bundle/appimage/* packaging/out/appimage/ 2>/dev/null || true
+    - ls -lh packaging/out/appimage/
+
 package:rpm:
   image: fedora:40
   <<: *package_base
@@ -168,6 +184,8 @@ release:
   image: alpine:latest
   needs:
     - build:binary
+    - package:deb
+    - package:appimage
     - package:rpm
     - package:arch
     - package:flatpak
