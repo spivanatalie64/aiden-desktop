@@ -1,34 +1,62 @@
 {
   "app-id": "org.acreetionos.Aiden",
   "runtime": "org.gnome.Platform",
-  "runtime-version": "43",
+  "runtime-version": "47",
   "sdk": "org.gnome.Sdk",
-  "command": "main.py",
+  "command": "aiden-desktop",
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=wayland",
+    "--filesystem=~/.local/share/aiden:create",
+    "--filesystem=~/.config/aiden:create",
+    "--talk-name=org.freedesktop.Notifications",
+    "--socket=session-bus",
+    "--device=dri"
+  ],
   "modules": [
+    {
+      "name": "python3-requests",
+      "buildsystem": "simple",
+      "build-commands": [
+        "pip3 install --prefix=/app requests cryptography"
+      ]
+    },
+    {
+      "name": "aiden-backend",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 main.py /app/lib/aiden/main.py",
+        "install -Dm755 aiden_storage.py /app/lib/aiden/aiden_storage.py",
+        "install -Dm755 openrouter_client.py /app/lib/aiden/openrouter_client.py",
+        "install -Dm755 settings.py /app/lib/aiden/settings.py",
+        "mkdir -p /app/lib/aiden/aiden",
+        "cp -r aiden/*.py /app/lib/aiden/aiden/",
+        "mkdir -p /app/lib/aiden/common",
+        "cp -r common/*.py /app/lib/aiden/common/",
+        "install -Dm755 desktop/sidecar/main.py /app/libexec/aiden-backend",
+        "install -Dm755 privileged/aiden-helper.py /app/libexec/aiden-helper.py"
+      ],
+      "sources": [
+        { "type": "dir", "path": "../../" }
+      ]
+    },
     {
       "name": "aiden-desktop",
       "buildsystem": "simple",
       "build-commands": [
-        "python3 -m pip install --no-index --find-links=wheelhouse -r requirements.txt",
-        "install -D main.py /app/lib/main.py",
-        "install -D aiden_storage.py /app/lib/aiden_storage.py",
-        "install -D openrouter_client.py /app/lib/openrouter_client.py",
-        "install -D settings.py /app/lib/settings.py",
-        "install -D aiden /app/bin/aiden",
-        "install -D privileged/aiden-helper.py /app/libexec/aiden-helper.py",
-        "install -D privileged/org.acreetionos.aiden.policy /app/share/polkit-1/actions/org.acreetionos.aiden.policy"
+        "cd desktop/web && npm ci && npm run build",
+        "mkdir -p /app/lib/aiden-desktop",
+        "cp -r desktop/src-tauri/target/release/aiden-desktop /app/bin/aiden-desktop",
+        "install -Dm644 packaging/org.acreetionos.Aiden.desktop /app/share/applications/org.acreetionos.Aiden.desktop",
+        "install -Dm644 desktop/src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/org.acreetionos.Aiden.png",
+        "install -Dm644 desktop/src-tauri/icons/128x128@2x.png /app/share/icons/hicolor/256x256/apps/org.acreetionos.Aiden.png",
+        "install -Dm644 packaging/org.acreetionos.Aiden.metainfo.xml /app/share/metainfo/org.acreetionos.Aiden.metainfo.xml"
       ],
       "sources": [
-        { "type": "dir", "path": "." }
+        { "type": "dir", "path": "../../" }
       ]
     }
-  ]
-  ,
-  "finish-args": [
-    "--share=network",
-    "--filesystem=~/.local/share/aiden:rw",
-    "--filesystem=~/.config/aiden:rw",
-    "--talk-name=org.freedesktop.Notifications",
-    "--socket=session-bus"
   ]
 }

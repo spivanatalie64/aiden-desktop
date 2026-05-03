@@ -1,0 +1,66 @@
+name: aiden-desktop
+base: core22
+version: "1.0.0"
+summary: AI desktop assistant with code execution, encrypted storage, and LAN mesh
+description: |
+  AIDEN is a powerful AI assistant that runs on your local machine. It provides
+  conversational AI via OpenRouter, sandboxed code execution (Bubblewrap + seccomp),
+  encrypted local storage (AES-256-GCM), LAN mesh caching, SSH-key authenticated
+  peer discovery, and multiple frontends (GTK, Tauri, TUI).
+
+grade: stable
+confinement: strict
+architectures:
+  - build-on: amd64
+
+apps:
+  aiden-desktop:
+    command: aiden-desktop
+    extensions: [gnome]
+    plugs:
+      - network
+      - network-bind
+      - home
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - unity7
+      - opengl
+      - audio-playback
+      - session-bus
+
+parts:
+  aiden-desktop:
+    plugin: nil
+    source: https://gitlab.acreetionos.org/natalie/aiden-desktop.git
+    source-type: git
+    source-tag: v1.0.0
+    build-packages:
+      - cargo
+      - npm
+      - nodejs
+      - python3
+      - libgtk-3-dev
+      - libwebkit2gtk-4.1-dev
+      - libappindicator-gtk3-dev
+      - librsvg2-dev
+      - libsoup-3.0-dev
+      - libssl-dev
+    stage-packages:
+      - libgtk-3-0
+      - libwebkit2gtk-4.1-0
+      - libappindicator-gtk3-1
+      - librsvg2-2
+      - libsoup-3.0-0
+      - python3
+      - python3-requests
+    override-build: |
+      cd desktop/web
+      npm ci
+      npm run build
+      cd ../..
+      cargo tauri build --bundles deb --project-dir desktop/src-tauri
+      mkdir -p $SNAPCRAFT_PART_INSTALL/bin
+      cp desktop/src-tauri/target/release/aiden-desktop $SNAPCRAFT_PART_INSTALL/bin/
+      cp -r desktop/src-tauri/target/release/bundle/deb/*/data/usr/share/* $SNAPCRAFT_PART_INSTALL/share/ 2>/dev/null || true

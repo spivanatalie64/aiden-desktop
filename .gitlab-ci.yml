@@ -1,79 +1,194 @@
 stages:
   - build
+  - package
+  - release
 
 variables:
   CARGO_HOME: $CI_PROJECT_DIR/.cargo
   CARGO_TARGET_DIR: $CI_PROJECT_DIR/desktop/src-tauri/target
   NODE_OPTIONS: --max-old-space-size=4096
 
-cache:
+.default_cache: &default_cache
   key: ${CI_JOB_IMAGE}
   paths:
     - .cargo/
     - desktop/src-tauri/target/
     - desktop/web/node_modules/
 
-.common_setup: &common_setup
+.default_setup: &default_setup
   before_script:
-    - apt-get update -qq
-    - apt-get install -y -qq
-        build-essential curl wget file pkg-config
-        libssl-dev libgtk-3-dev librsvg2-dev
-        libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev
-        libsoup-3.0-dev 2>&1 | tail -3
+    - apt-get update -qq && apt-get install -y -qq
+        build-essential curl wget file pkg-config libssl-dev
+        libgtk-3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+        libjavascriptcoregtk-4.1-dev libsoup-3.0-dev 2>&1 | tail -1
     - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-    - apt-get install -y -qq nodejs 2>&1 | tail -3
-    - cd desktop/web && npm ci && cd ../../
+    - apt-get install -y -qq nodejs 2>&1 | tail -1
+    - rustup default stable 2>/dev/null || true
 
-build:deb:
+# ── Build stage: produce binary + native bundles ──────────────────────
+
+build:binary:
   stage: build
   image: ubuntu:24.04
-  <<: *common_setup
+  cache:
+    <<: *default_cache
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq
+        build-essential curl wget file pkg-config libssl-dev
+        libgtk-3-dev librsvg2-dev libwebkit2gtk-4.1-dev
+        libjavascriptcoregtk-4.1-dev libsoup-3.0-dev
+        libayatana-appindicator3-dev 2>&1 | tail -1
+    - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    - apt-get install -y -qq nodejs 2>&1 | tail -1
+    - rustup default stable 2>/dev/null || true
   script:
-    - apt-get install -y -qq libayatana-appindicator3-dev 2>&1 | tail -1
-    - cd desktop
-    - npx --prefix web tauri build --bundles deb,appimage
+    - cd desktop/web && npm ci --silent && cd ../..
+    - cd desktop && npx --prefix web tauri build --bundles deb,appimage && cd ..
   artifacts:
-    name: "aiden-desktop-${CI_COMMIT_SHORT_SHA}-deb"
+    name: "aiden-desktop-binary-${CI_COMMIT_SHORT_SHA}"
     paths:
+      - desktop/src-tauri/target/release/aiden-desktop
       - desktop/src-tauri/target/release/bundle/
     expire_in: 30 days
 
-build:rpm:
-  stage: build
+# ── Package stage: distro-specific packaging (tagged releases only) ───
+
+.package_template: &package_template
+  stage: package
+  needs: ["build:binary"]
+  cache:
+    <<: *default_cache
+  artifacts:
+    name: "${CI_JOB_NAME}-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - packaging/out/
+    expire_in: 90 days
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+package:rpm:
   image: fedora:40
+  <<: *package_template
   before_script:
-    - dnf install -y -q
-        gcc-c++ file pkg-config openssl-devel
-        gtk3-devel webkit2gtk4.1-devel
-        librsvg2-devel libsoup3-devel
-        libappindicator-gtk3-devel
-        nodejs npm rustup 2>&1 | tail -3
-    - rustup default stable
-    - cd desktop/web && npm ci && cd ../../
+    - dnf install -y -q rpmdevtools gcc-c++ file pkg-config openssl-devel
+        gtk3-devel webkit2gtk4.1-devel librsvg2-devel libsoup3-devel
+        libappindicator-gtk3-devel nodejs npm rustup 2>&1 | tail -1
+    - rustup default stable 2>/dev/null || true
   script:
-    - cd desktop
-    - npx --prefix web tauri build --bundles rpm,appimage
-  artifacts:
-    name: "aiden-desktop-${CI_COMMIT_SHORT_SHA}-rpm"
-    paths:
-      - desktop/src-tauri/target/release/bundle/
-    expire_in: 30 days
+    - mkdir -p packaging/out
+    - cd desktop/web && npm ci --silent && npm run build --silent && cd ../..
+    - cd desktop && npx --prefix web tauri build --bundles rpm && cd ..
+    - cp desktop/src-tauri/target/release/bundle/rpm/*.rpm packaging/out/ 2>/dev/null || true
+    - cd packaging && cp -r rpm/*.spec out/ 2>/dev/null || true
 
-build:macos:
-  stage: build
-  tags:
-    - macos
-  only:
-    - tags
+package:arch:
+  image: archlinux:latest
+  <<: *package_template
   before_script:
-    - brew install node rust 2>&1 | tail -3
-    - cd desktop/web && npm ci && cd ../../
+    - pacman -Syu --noconfirm
+    - pacman -S --noconfirm base-devel cargo npm nodejs python
+        webkit2gtk-4.1 libappindicator-gtk3 librsvg 2>&1 | tail -3
+    - useradd -m builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
   script:
-    - cd desktop
-    - npx --prefix web tauri build --bundles dmg
-  artifacts:
-    name: "aiden-desktop-${CI_COMMIT_SHORT_SHA}-macos"
-    paths:
-      - desktop/src-tauri/target/release/bundle/
-    expire_in: 30 days
+    - mkdir -p packaging/out
+    - chown -R builder:builder .
+    - sudo -u builder bash -c "
+        cd desktop/web && npm ci --silent && npm run build --silent && cd ../.. &&
+        cd desktop && cargo tauri build --bundles deb && cd .."
+    - cp packaging/arch/PKGBUILD packaging/out/
+    - cp desktop/src-tauri/target/release/aiden-desktop packaging/out/
+
+package:flatpak:
+  image: ubuntu:24.04
+  <<: *package_template
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq flatpak flatpak-builder
+        python3 python3-pip 2>&1 | tail -1
+    - flatpak remote-add --user --if-not-exists flathub
+        https://flathub.org/repo/flathub.flatpakrepo 2>/dev/null
+    - flatpak install --user -y org.gnome.Platform//47 org.gnome.Sdk//47 2>&1 | tail -3
+  script:
+    - mkdir -p packaging/out
+    - flatpak-builder --force-clean --repo=packaging/out/flatpak-repo
+        packaging/flatpak-build packaging/flatpak/org.acreetionos.Aiden.json 2>&1 | tail -5
+    - flatpak build-bundle packaging/out/flatpak-repo
+        packaging/out/aiden-desktop.flatpak org.acreetionos.Aiden 2>&1
+
+package:alpine:
+  image: alpine:latest
+  <<: *package_template
+  before_script:
+    - apk add --no-cache alpine-sdk cargo npm nodejs python3
+        gtk+3.0-dev webkit2gtk-4.1-dev librsvg-dev openssl-dev
+        curl-dev sudo 2>&1 | tail -1
+  script:
+    - mkdir -p packaging/out
+    - cd desktop/web && npm ci --silent && npm run build --silent && cd ../..
+    - cd desktop && cargo tauri build --bundles deb && cd ..
+    - cp packaging/alpine/APKBUILD packaging/out/
+    - cp desktop/src-tauri/target/release/aiden-desktop packaging/out/
+
+package:void:
+  image: ghcr.io/void-linux/void-linux:latest
+  <<: *package_template
+  before_script:
+    - xbps-install -Syu -y 2>&1 | tail -1
+    - xbps-install -y -S base-devel cargo npm nodejs python3
+        gtk+3-devel webkit2gtk-4.1-devel librsvg-devel 2>&1 | tail -1
+  script:
+    - mkdir -p packaging/out
+    - cd desktop/web && npm ci --silent && npm run build --silent && cd ../..
+    - cd desktop && cargo tauri build --bundles deb && cd ..
+    - cp packaging/void/template.py packaging/out/
+    - cp desktop/src-tauri/target/release/aiden-desktop packaging/out/
+
+package:opensuse:
+  image: opensuse/tumbleweed:latest
+  <<: *package_template
+  before_script:
+    - zypper --gpg-auto-import-keys ref 2>&1 | tail -1
+    - zypper install -y -l gcc-c++ rpm-build file pkg-config libopenssl-devel
+        gtk3-devel webkit2gtk-4_1-devel librsvg-devel libsoup3-devel
+        libappindicator-gtk3-devel nodejs npm rustup 2>&1 | tail -1
+    - rustup default stable 2>/dev/null || true
+  script:
+    - mkdir -p packaging/out
+    - cd desktop/web && npm ci --silent && npm run build --silent && cd ../..
+    - cd desktop && npx --prefix web tauri build --bundles rpm && cd ..
+    - cp desktop/src-tauri/target/release/bundle/rpm/*.rpm packaging/out/ 2>/dev/null || true
+
+# ── Release stage: publish to GitLab releases ─────────────────────────
+
+release:
+  stage: release
+  image: alpine:latest
+  needs:
+    - build:binary
+    - package:rpm
+    - package:arch
+    - package:flatpak
+    - package:alpine
+    - package:void
+    - package:opensuse
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - apk add --no-cache curl jq
+    - |
+      curl --header "PRIVATE-TOKEN: ${GL_TOKEN}" \
+        --request POST \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/releases" \
+        --data '{
+          "name": "AIDEN Desktop '"${CI_COMMIT_TAG}"'",
+          "tag_name": "'"${CI_COMMIT_TAG}"'",
+          "description": "Automated release from pipeline '"${CI_PIPELINE_ID}"'",
+          "assets": {
+            "links": [
+              {"name": "DEB Package", "url": "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/desktop/src-tauri/target/release/bundle/deb/"},
+              {"name": "RPM Package", "url": "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/packaging/out/"},
+              {"name": "AppImage",    "url": "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/desktop/src-tauri/target/release/bundle/appimage/"}
+            ]
+          }
+        }' 2>&1 | head -5
