@@ -1,76 +1,224 @@
-$schema: https://textual.textualize.io/schemas/theme.json
+/* AcreetionOS Dark Theme for AIDEN TUI */
+/* Based on the AcreetionOS brand colors */
 
-# AcreetionOS Dark Theme for AIDEN TUI
-# Based on the AcreetionOS brand colors
+Screen {
+    background: #121212;
+}
 
-colors:
-  primary: "#2ecc71"
-  secondary: "#61afef"
-  background: "#121212"
-  surface: "#1a1a1a"
-  panel: "#222222"
-  border: "#333333"
-  text: "#e5e5e5"
-  text-muted: "#b2b2b2"
-  error: "#e74c3c"
-  warning: "#f39c12"
-  accent: "#9b59b6"
-  success: "#2ecc71"
+Header {
+    background: #1a1a1a;
+    color: #e5e5e5;
+}
 
-Screen:
-  background: $background
+Footer {
+    background: #1a1a1a;
+    color: #b2b2b2;
+}
 
-Header:
-  background: $surface
-  color: $text
+Static {
+    background: transparent;
+    color: #e5e5e5;
+}
 
-Footer:
-  background: $surface
-  color: $text-muted
+Input {
+    background: #222222;
+    border: solid #333333;
+    color: #e5e5e5;
+}
 
-Static:
-  background: transparent
-  color: $text
+Button {
+    background: #222222;
+    color: #e5e5e5;
+    border: solid #333333;
+}
 
-Input:
-  background: $panel
-  border: solid $border
-  color: $text
+Button.primary {
+    background: #2ecc71;
+    color: #000;
+    border: none;
+}
 
-Button:
-  background: $panel
-  color: $text
-  border: solid $border
+Button.error {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+}
 
-Button.primary:
-  background: $primary
-  color: #000
-  border: none
+ListView {
+    background: #222222;
+    border: solid #333333;
+}
 
-Button.error:
-  background: $error
-  color: #fff
-  border: none
+ListItem {
+    background: #222222;
+    color: #e5e5e5;
+}
 
-ListView:
-  background: $panel
-  border: solid $border
+ListItem:hover {
+    background: #1a1a1a;
+}
 
-ListItem:
-  background: $panel
-  color: $text
-  &:hover:
-    background: $surface
+TabbedContent {
+    background: #222222;
+    border: solid #333333;
+}
 
-TabbedContent:
-  background: $panel
-  border: solid $border
+DataTable {
+    background: #222222;
+    border: solid #333333;
+    color: #e5e5e5;
+}
 
-DataTable:
-  background: $panel
-  border: solid $border
-  color: $text
+RichLog {
+    background: transparent;
+    color: #e5e5e5;
+}
 
-Tree:
-  background: $panel
-  border: solid $border
+Select {
+    background: #222222;
+    border: solid #333333;
+    color: #e5e5e5;
+}
+
+#chat-container {
+    height: 100%;
+}
+
+#chat-log {
+    height: 1fr;
+    border: none;
+}
+
+#chat-input {
+    dock: bottom;
+}
+
+#toolbar {
+    height: 3;
+    dock: top;
+}
+
+#disclaimer-container {
+    align: center middle;
+    width: 80%;
+    height: auto;
+    margin: 2 4;
+}
+
+#disclaimer-text {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#disclaimer-buttons {
+    align-horizontal: center;
+    margin-top: 1;
+}
+
+#settings-container {
+    height: 100%;
+}
+
+#history-container {
+    height: 100%;
+}
+
+#search-input {
+    dock: top;
+    margin: 0 0 1 0;
+}
+
+#conversation-list {
+    height: 2fr;
+}
+
+#preview-area {
+    height: 1fr;
+    border: solid #333333;
+    margin-top: 1;
+    padding: 1;
+}
+
+#process-container {
+    height: 100%;
+}
+
+#resources-display {
+    margin-bottom: 1;
+}
+
+#services-table {
+    height: 2fr;
+}
+
+#key-setup-container {
+    align: center middle;
+    width: 80%;
+    height: auto;
+    margin: 2 4;
+}
+
+#mesh-container {
+    height: 100%;
+}
+
+#peers-table {
+    height: 1fr;
+}
+
+#credits-container {
+    align: center middle;
+    width: 80%;
+    height: auto;
+    margin: 2 4;
+}
+
+#credits-text {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#dev-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#mesh-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#key-setup-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#key-setup-desc {
+    margin-bottom: 1;
+}
+
+#key-status {
+    margin-bottom: 1;
+}
+
+#modal-container {
+    align: center middle;
+    width: 60%;
+    height: auto;
+    background: #1a1a1a;
+    border: solid #333333;
+}
+
+#modal-title {
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#pwd-input {
+    margin-bottom: 1;
+}
+
+#mesh-controls {
+    height: 3;
+    margin-bottom: 1;
+}

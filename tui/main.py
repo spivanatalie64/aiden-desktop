@@ -120,10 +120,10 @@ class AidenTUI(App):
         if not is_disclaimer_accepted():
             self.push_screen(DisclaimerScreen())
         else:
-            self.switch_screen('chat')
+            self.push_screen('chat')
 
     def action_switch_to_chat(self):
-        self.switch_screen('chat')
+        self.push_screen('chat')
 
     def action_switch_to_history(self):
         self.push_screen('history')
