@@ -23,59 +23,77 @@ from pathlib import Path
 DEFAULT_PROXY = "https://aiden.acreetionos.org/api/chat"
 
 
+def _set_widget_margin(widget, margin):
+    widget.set_margin_start(margin)
+    widget.set_margin_end(margin)
+    widget.set_margin_top(margin)
+    widget.set_margin_bottom(margin)
+
+
+def _load_theme():
+    display = Gdk.Display.get_default()
+    if display is None:
+        display = Gdk.Display.open()
+    if display is None:
+        return
+    provider = Gtk.CssProvider()
+    # Removed custom CSS to use system GTK theme
+    Gtk.StyleContext.add_provider_for_screen(
+        Gdk.Screen.get_default(),
+        provider,
+        Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+    )
+
+
 def show_disclaimer(parent=None) -> bool:
     dlg = Gtk.Dialog(
         title='AIDEN – System Access Notice',
         parent=parent,
         flags=Gtk.DialogFlags.MODAL,
-        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT),
     )
+    dlg.add_button(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT)
     dlg.set_default_size(560, 420)
     box = dlg.get_content_area()
 
     markup = Gtk.Label()
     markup.set_markup(
-        '<b><span size="x-large">⚠  AIDEN – System Access Notice</span></b>\n\n'
+        '<b><span size="x-large">\u26a0  AIDEN – System Access Notice</span></b>\n\n'
         'AIDEN has been granted the ability to execute arbitrary code '
         'and commands on your system.\n\n'
-        '• Code you ask AIDEN to run will be executed with YOUR user '
+        '\u2022 Code you ask AIDEN to run will be executed with YOUR user '
         'permissions (and with elevated privileges via polkit where authorized).\n'
-        '• You are solely responsible for any commands, scripts, or operations '
+        '\u2022 You are solely responsible for any commands, scripts, or operations '
         'AIDEN performs at your direction.\n'
-        '• Review all commands before execution.\n'
-        '• This is a tool — you are in control.\n\n'
+        '\u2022 Review all commands before execution.\n'
+        '\u2022 This is a tool — you are in control.\n\n'
         '<i>By accepting, you agree to take full responsibility for your use of AIDEN.</i>'
     )
     markup.set_line_wrap(True)
-    markup.set_margin(12)
+    _set_widget_margin(markup, 12)
     box.pack_start(markup, True, True, 0)
 
-    credits_btn = Gtk.Button(label='Credits →')
+    credits_btn = Gtk.Button(label='Credits \u2192')
     def show_credits(_):
-        cred_dlg = Gtk.Dialog(
-            title='Credits',
-            parent=dlg,
-            flags=Gtk.DialogFlags.MODAL,
-            buttons=(Gtk.STOCK_OK, Gtk.ResponseType.OK),
-        )
+        cred_dlg = Gtk.Dialog(title='Credits', parent=dlg, flags=Gtk.DialogFlags.MODAL)
+        cred_dlg.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
         cred_box = cred_dlg.get_content_area()
         cred_label = Gtk.Label()
         cred_label.set_markup(
             '<b>AIDEN Desktop – AcreetionOS AI Assistant</b>\n\n'
-            'Developed by Natalie Spiva (@sprungles) & Darren Clift\n'
+            'Developed by Natalie Spiva (@sprungles) &amp; Darren Clift\n'
             'for the AcreetionOS Project\n\n'
             '<b>Powered by:</b>\n'
-            '• OpenRouter API proxy\n'
-            '• Python + PyGObject (GTK frontend)\n'
-            '• Svelte + Tauri (Desktop webview)\n'
-            '• Textual (Terminal UI)\n'
-            '• cryptography (AES-GCM encrypted storage)\n'
-            '• requests, httpx, FastAPI, uvicorn\n'
-            '• marked, highlight.js\n\n'
+            '\u2022 OpenRouter API proxy\n'
+            '\u2022 Python + PyGObject (GTK frontend)\n'
+            '\u2022 Svelte + Tauri (Desktop webview)\n'
+            '\u2022 Textual (Terminal UI)\n'
+            '\u2022 cryptography (AES-GCM encrypted storage)\n'
+            '\u2022 requests, httpx, FastAPI, uvicorn\n'
+            '\u2022 marked, highlight.js\n\n'
             '<i>Built on open-source software. Licensed under GPL-3.0-or-later.</i>'
         )
         cred_label.set_line_wrap(True)
-        cred_label.set_margin(12)
+        _set_widget_margin(cred_label, 12)
         cred_box.pack_start(cred_label, True, True, 0)
         cred_dlg.show_all()
         cred_dlg.run()
@@ -83,7 +101,7 @@ def show_disclaimer(parent=None) -> bool:
     credits_btn.connect('clicked', show_credits)
 
     btn_box = Gtk.Box(spacing=6)
-    accept_btn = Gtk.Button(label='I Accept & Understand')
+    accept_btn = Gtk.Button(label='I Accept &amp; Understand')
     accept_btn.get_style_context().add_class('suggested-action')
     accept_btn.connect(
         'clicked',
@@ -91,7 +109,7 @@ def show_disclaimer(parent=None) -> bool:
     )
     btn_box.pack_end(accept_btn, False, False, 0)
     btn_box.pack_end(credits_btn, False, False, 0)
-    btn_box.set_margin(12)
+    _set_widget_margin(btn_box, 12)
     box.pack_start(btn_box, False, False, 0)
 
     dlg.show_all()
@@ -101,30 +119,26 @@ def show_disclaimer(parent=None) -> bool:
 
 
 def show_credits_dialog(parent=None):
-    dlg = Gtk.Dialog(
-        title='Credits',
-        parent=parent,
-        flags=0,
-        buttons=(Gtk.STOCK_OK, Gtk.ResponseType.OK),
-    )
+    dlg = Gtk.Dialog(title='Credits', parent=parent, flags=0)
+    dlg.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
     box = dlg.get_content_area()
     label = Gtk.Label()
     label.set_markup(
         '<b>AIDEN Desktop – AcreetionOS AI Assistant</b>\n\n'
-        'Developed by Natalie Spiva (@sprungles) & Darren Clift\n'
+        'Developed by Natalie Spiva (@sprungles) &amp; Darren Clift\n'
         'for the AcreetionOS Project\n\n'
         '<b>Powered by:</b>\n'
-        '• OpenRouter API proxy\n'
-        '• Python + PyGObject (GTK frontend)\n'
-        '• Svelte + Tauri (Desktop webview)\n'
-        '• Textual (Terminal UI)\n'
-        '• cryptography (AES-GCM encrypted storage)\n'
-        '• requests, httpx, FastAPI, uvicorn\n'
-        '• marked, highlight.js\n\n'
+        '\u2022 OpenRouter API proxy\n'
+        '\u2022 Python + PyGObject (GTK frontend)\n'
+        '\u2022 Svelte + Tauri (Desktop webview)\n'
+        '\u2022 Textual (Terminal UI)\n'
+        '\u2022 cryptography (AES-GCM encrypted storage)\n'
+        '\u2022 requests, httpx, FastAPI, uvicorn\n'
+        '\u2022 marked, highlight.js\n\n'
         '<i>Built on open-source software. Licensed under GPL-3.0-or-later.</i>'
     )
     label.set_line_wrap(True)
-    label.set_margin(12)
+    _set_widget_margin(label, 12)
     box.pack_start(label, True, True, 0)
     dlg.show_all()
     dlg.run()
@@ -397,6 +411,7 @@ class AidenWindow(Gtk.Window):
 
 
 def main():
+    _load_theme()
     if not is_disclaimer_accepted():
         accepted = show_disclaimer()
         if not accepted:

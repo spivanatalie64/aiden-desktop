@@ -20,55 +20,90 @@ pkexec or another polkit mechanism.
 """
 
 import json
-from pathlib import Path
+import os
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import base64
 
-# Default whitelist (safe examples). In production, package should install
-# /etc/aiden/whitelist.json with the exact allowed commands.
-ALLOWED_RUN_COMMANDS = [
-    # specify allowed commands as lists of tokens
-    ['ls', '/root'],
-    ['/usr/bin/apt', 'update'],
-]
+# This path should be configured by the package installer, pointing to where
+# the encrypted whitelist is placed (e.g., /etc/aiden/whitelist.enc)
+ENCRYPTED_WHITELIST_PATH = '/etc/aiden/whitelist.enc'
+DEFAULT_WHITELIST_PATH = Path(__file__).parent / 'whitelist.enc'
 
 
-def load_whitelist(path: str = '/etc/aiden/whitelist.json'):
-    p = Path(path)
-    if not p.exists():
-        return ALLOWED_RUN_COMMANDS
-    try:
-        j = json.loads(p.read_text(encoding='utf-8'))
-        allowed = j.get('allowed', [])
-        # ensure tokens are lists of strings
-        res = []
-        for item in allowed:
-            if isinstance(item, list) and all(isinstance(t, str) for t in item):
-                res.append(item)
-        return res if res else ALLOWED_RUN_COMMANDS
-    except Exception:
-        return ALLOWED_RUN_COMMANDS
+def derive_key(password: str, salt: bytes, iterations: int = 200_000) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=iterations,
+        backend=default_backend(),
+    )
+    return kdf.derive(password.encode('utf-8'))
+
+
+def load_and_decrypt_whitelist(password: str):
+    """Loads and decrypts the command whitelist."""
+    path = Path(ENCRYPTED_WHITELIST_PATH)
+    if not path.exists():
+        # Fallback for development/testing
+        path = DEFAULT_WHITELIST_PATH
+        if not path.exists():
+             raise FileNotFoundError("Encrypted whitelist not found.")
+
+    with open(path, 'r', encoding='utf-8') as f:
+        payload = json.load(f)
+
+    salt = base64.b64decode(payload['salt'])
+    nonce = base64.b64decode(payload['nonce'])
+    ct = base64.b64decode(payload['ct'])
+
+    key = derive_key(password, salt)
+    aes = AESGCM(key)
+    pt = aes.decrypt(nonce, ct, None).decode('utf-8')
+    
+    j = json.loads(pt)
+    allowed = j.get('allowed', [])
+    res = []
+    for item in allowed:
+        if isinstance(item, list) and all(isinstance(t, str) for t in item):
+            res.append(item)
+    return res
 
 
 def reboot_system():
     subprocess.check_call(['systemctl', 'reboot'])
 
 
-def is_allowed(cmd_list):
-    # exact match against whitelist entries loaded from /etc/aiden/whitelist.json
-    allowed_cmds = load_whitelist()
+def is_allowed(cmd_list, allowed_cmds):
     for allowed in allowed_cmds:
         if cmd_list == allowed:
             return True
     return False
 
 
-def run_command(cmd):
-    if not is_allowed(cmd):
+def run_command(cmd, allowed_cmds):
+    if not is_allowed(cmd, allowed_cmds):
         raise PermissionError('command not permitted')
     return subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf-8')
 
 
 def main():
     logging.basicConfig(level=logging.INFO)
+    
+    password = os.environ.get('AIDEN_WHITELIST_KEY')
+    if not password:
+        print('CRITICAL: AIDEN_WHITELIST_KEY is not set. Cannot operate securely.', file=sys.stderr)
+        sys.exit(10)
+
+    try:
+        allowed_cmds = load_and_decrypt_whitelist(password)
+    except Exception as e:
+        print(f'CRITICAL: Failed to load or decrypt whitelist: {e}', file=sys.stderr)
+        sys.exit(11)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', required=True, choices=['reboot', 'run'])
     parser.add_argument('--cmd', nargs='+')
@@ -85,7 +120,7 @@ def main():
             if not args.cmd:
                 print('missing --cmd', file=sys.stderr)
                 sys.exit(2)
-            out = run_command(args.cmd)
+            out = run_command(args.cmd, allowed_cmds)
             print(out)
     except PermissionError as e:
         print(f'Permission denied: {e}', file=sys.stderr)

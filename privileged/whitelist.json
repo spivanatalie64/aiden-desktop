@@ -1,0 +1,7 @@
+{
+  "allowed": [
+    ["ls", "-l", "/root"],
+    ["/usr/bin/apt", "update"],
+    ["/usr/bin/apt", "upgrade", "-y"]
+  ]
+}
